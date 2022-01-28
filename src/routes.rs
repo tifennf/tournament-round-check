@@ -53,12 +53,12 @@ pub async fn start(
         let mut state = c_state.lock().await;
 
         for player in state.player_list.iter() {
-            let res = unregister_player(&client, player.discord_id.clone()).await;
+            let res = unregister_player(&client, player.discord_id.clone())
+                .await
+                .unwrap();
 
-            println!("{:#?}", res);
-
-            if let Err(err) = res {
-                println!("Could not unregister player: {}", err);
+            if !res.status().is_success() {
+                debug!("Could not unregister player");
             }
         }
 

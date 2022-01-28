@@ -30,7 +30,7 @@ pub async fn unregister_player(client: &Client, discord_id: String) -> Result<Re
     let player = DummyPlayer::new(discord_id);
 
     client
-        .delete("http://localhost:3024/inscriptions")
+        .delete("http://localhost:3024/tournament/inscriptions")
         .json(&player)
         .send()
         .await
