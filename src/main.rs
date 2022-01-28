@@ -29,9 +29,9 @@ async fn main() {
         .layer(AddExtensionLayer::new(state));
 
     let app = Router::new()
-        .route("/check", get(check))
-        .route("/start", get(start))
-        .route("/info", get(info))
+        .route("/check/", get(check))
+        .route("/start/", get(start))
+        .route("/info/", get(info))
         .layer(middlewares_package);
 
     axum::Server::bind(&addr)
