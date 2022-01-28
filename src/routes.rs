@@ -1,11 +1,18 @@
 use std::time::Duration;
 
-use axum::extract::Extension;
-use reqwest::Client;
+use axum::{
+    extract::{Extension, Path},
+    Json,
+};
+use reqwest::{Client, StatusCode};
 use tokio::time::sleep;
 use tracing::log::debug;
 
 use crate::{utils::unregister_player, Player, State, Tournament};
+
+pub async fn info(Extension(state): Extension<State>) -> Json<State> {
+    Json(state)
+}
 
 pub async fn start(Extension(mut state): Extension<State>) -> String {
     state.on_check = true;
@@ -36,4 +43,25 @@ pub async fn start(Extension(mut state): Extension<State>) -> String {
         state.on_check = false;
     });
     format!("Check-in started, duration: {} seconds", duration.as_secs())
+}
+
+pub async fn check(
+    Extension(mut state): Extension<State>,
+    Path(discord_id): Path<String>,
+) -> (StatusCode, String) {
+    let base_len = state.player_list.len();
+
+    let player_list: Vec<Player> = state
+        .player_list
+        .into_iter()
+        .filter(|p| p.discord_id != discord_id)
+        .collect();
+
+    if player_list.len() < base_len {
+        state.player_list = player_list;
+
+        (StatusCode::OK, "Player validated his check-in".to_string())
+    } else {
+        (StatusCode::BAD_REQUEST, "Player not found".to_string())
+    }
 }

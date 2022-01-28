@@ -4,8 +4,10 @@ pub mod utils;
 use std::net::SocketAddr;
 
 use axum::{routing::get, AddExtensionLayer, Router};
-use routes::start;
+use routes::{check, info, start};
 use serde::{Deserialize, Serialize};
+use tower::ServiceBuilder;
+use tower_http::trace::TraceLayer;
 
 #[tokio::main]
 async fn main() {
@@ -21,9 +23,15 @@ async fn main() {
         player_list: Vec::new(),
     };
 
-    let app = Router::new()
-        .route("/start", get(start))
+    let middlewares_package = ServiceBuilder::new()
+        .layer(TraceLayer::new_for_http())
         .layer(AddExtensionLayer::new(state));
+
+    let app = Router::new()
+        .route("/check", get(check))
+        .route("/start", get(start))
+        .route("/info", get(info))
+        .layer(middlewares_package);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
@@ -31,7 +39,7 @@ async fn main() {
         .unwrap();
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct State {
     pub on_check: bool,
     pub player_list: Vec<Player>,
