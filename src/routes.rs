@@ -10,7 +10,7 @@ use serde_json::Value;
 use tokio::{sync::Mutex, time::sleep};
 use tracing::log::debug;
 
-use crate::{utils::unregister_player, Player, State, Tournament};
+use crate::{utils::unregister_player, ApiRes, Player, State, Tournament};
 
 pub async fn info(Extension(state): Extension<SharedState>) -> Result<Json<State>, StatusCode> {
     let state = state.lock().await;
@@ -36,7 +36,7 @@ pub async fn start(
         .await
         .map_err(|_| StatusCode::FORBIDDEN)?;
 
-    let tournament = res.json::<HashMap<String, Value>>().await.map_err(|err| {
+    let tournament = res.json::<ApiRes>().await.map_err(|err| {
         println!("{}", err);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
