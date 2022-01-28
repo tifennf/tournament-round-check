@@ -26,7 +26,7 @@ pub async fn start(Extension(mut state): Extension<State>) -> (StatusCode, Strin
             .json::<Tournament>()
             .await
             .and_then(|t| Ok(t.player_list)),
-        Err(_) => Ok(Vec::new()),
+        Err(err) => Err(err),
     };
 
     match player_list {
