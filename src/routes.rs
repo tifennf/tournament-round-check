@@ -33,12 +33,12 @@ pub async fn start(
         .get("http://localhost:3024/info")
         .send()
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| StatusCode::FORBIDDEN)?;
 
-    let tournament = res
-        .json::<Tournament>()
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let tournament = res.json::<Tournament>().await.map_err(|err| {
+        debug!("{}", err);
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     let player_list = tournament.player_list.list;
 
