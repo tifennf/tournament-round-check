@@ -1,9 +1,5 @@
-use std::sync::{LockResult, MutexGuard};
-
-use reqwest::{Client, Error, Response, StatusCode};
+use reqwest::{Client, Error, Response};
 use serde::Serialize;
-
-use crate::State;
 
 #[derive(Debug, Serialize)]
 struct DummyPlayer {
