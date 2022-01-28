@@ -31,8 +31,10 @@ async fn main() {
     let app = Router::new()
         .route("/check/:id", get(check))
         .route("/start/:time", get(start))
-        .route("/info/", get(info))
+        .route("/info", get(info))
         .layer(middlewares_package);
+
+    tracing::debug!("Listening on address: {}", addr);
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
