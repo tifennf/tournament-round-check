@@ -1,0 +1,61 @@
+mod routes;
+pub mod utils;
+
+use std::net::SocketAddr;
+
+use axum::{routing::get, AddExtensionLayer, Router};
+use routes::start;
+use serde::{Deserialize, Serialize};
+
+#[tokio::main]
+async fn main() {
+    if std::env::var_os("RUST_LOG").is_none() {
+        std::env::set_var("RUST_LOG", "tournament-round-check=debug,tower_http=debug")
+    }
+    tracing_subscriber::fmt::init();
+
+    let addr = SocketAddr::from(([127, 0, 0, 1], 3025));
+
+    let state = State {
+        on_check: false,
+        player_list: Vec::new(),
+    };
+
+    let app = Router::new()
+        .route("/start", get(start))
+        .layer(AddExtensionLayer::new(state));
+
+    axum::Server::bind(&addr)
+        .serve(app.into_make_service())
+        .await
+        .unwrap();
+}
+
+#[derive(Debug, Clone)]
+pub struct State {
+    pub on_check: bool,
+    pub player_list: Vec<Player>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Player {
+    pub league_name: String,
+    pub discord_name: DiscordName,
+    pub discord_id: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct DiscordName {
+    pub name: String,
+    pub tag: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ApiRes {
+    status: u16,
+    data: Tournament,
+}
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Tournament {
+    player_list: Vec<Player>,
+}
