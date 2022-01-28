@@ -40,7 +40,7 @@ pub async fn start(
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let player_list = tournament.player_list;
+    let player_list = tournament.player_list.list;
 
     let duration = Duration::from_secs(time);
 

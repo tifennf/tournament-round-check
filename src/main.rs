@@ -68,5 +68,10 @@ pub struct ApiRes {
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tournament {
-    player_list: Vec<Player>,
+    player_list: PlayerList,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlayerList {
+    list: Vec<Player>,
 }
