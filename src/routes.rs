@@ -56,7 +56,7 @@ pub async fn start(
             let res = unregister_player(&client, player.discord_id.clone()).await;
 
             if let Err(err) = res {
-                debug!("Could not unregister player: {}", err);
+                println!("Could not unregister player: {}", err);
             }
         }
         state.on_check = false;
