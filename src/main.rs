@@ -1,11 +1,12 @@
 mod routes;
 pub mod utils;
 
-use std::net::SocketAddr;
+use std::{net::SocketAddr, sync::Arc};
 
 use axum::{routing::get, AddExtensionLayer, Router};
 use routes::{check, info, start};
 use serde::{Deserialize, Serialize};
+use tokio::sync::Mutex;
 use tower::ServiceBuilder;
 use tower_http::trace::TraceLayer;
 
@@ -18,10 +19,10 @@ async fn main() {
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3025));
 
-    let state = State {
+    let state = Arc::new(Mutex::new(State {
         on_check: false,
         player_list: Vec::new(),
-    };
+    }));
 
     let middlewares_package = ServiceBuilder::new()
         .layer(TraceLayer::new_for_http())

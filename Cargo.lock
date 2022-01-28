@@ -74,6 +74,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "axum-debug"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9db5dc4828d357f9b15df085afe0271d26d3a831c01361260e73bfbbb327b8f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1056,6 +1067,7 @@ name = "tournament-round-check"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "axum-debug",
  "futures",
  "rand",
  "reqwest",

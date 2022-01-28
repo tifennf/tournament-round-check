@@ -1,73 +1,84 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     extract::{Extension, Path},
     Json,
 };
+
 use reqwest::{Client, StatusCode};
-use tokio::time::sleep;
+use tokio::{sync::Mutex, time::sleep};
 use tracing::log::debug;
 
 use crate::{utils::unregister_player, Player, State, Tournament};
 
-pub async fn info(Extension(state): Extension<State>) -> Json<State> {
-    Json(state)
+pub async fn info(Extension(state): Extension<SharedState>) -> Result<Json<State>, StatusCode> {
+    let state = state.lock().await;
+
+    Ok(Json(state.clone()))
 }
 
-pub async fn start(Extension(mut state): Extension<State>) -> (StatusCode, String) {
+type SharedState = Arc<Mutex<State>>;
+
+pub async fn start(
+    Extension(state): Extension<SharedState>,
+) -> Result<(StatusCode, String), StatusCode> {
+    let c_state = state.clone();
+
+    let mut state = state.lock().await;
     state.on_check = true;
 
     let client = Client::new();
+    let res = client
+        .get("http://localhost:3024/info")
+        .send()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let res = client.get("http://localhost:3024/info").send().await;
+    let tournament = res
+        .json::<Tournament>()
+        .await
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
-    let player_list = match res {
-        Ok(res) => res
-            .json::<Tournament>()
-            .await
-            .and_then(|t| Ok(t.player_list)),
-        Err(err) => Err(err),
-    };
+    let player_list = tournament.player_list;
 
-    match player_list {
-        Ok(player_list) => {
-            let duration = Duration::from_secs(600);
+    let duration = Duration::from_secs(600);
 
-            state.player_list = player_list;
+    state.player_list = player_list;
 
-            tokio::spawn(async move {
-                sleep(duration).await;
+    tokio::spawn(async move {
+        sleep(duration).await;
 
-                for player in state.player_list {
-                    let res = unregister_player(&client, player.discord_id).await;
+        let mut state = c_state.lock().await;
 
-                    if let Err(err) = res {
-                        debug!("Could not unregister player: {}", err);
-                    }
-                }
+        for player in state.player_list.iter() {
+            let res = unregister_player(&client, player.discord_id.clone()).await;
 
-                state.on_check = false;
-            });
-            (
-                StatusCode::OK,
-                format!("Check-in started, duration: {} seconds", duration.as_secs()),
-            )
+            if let Err(err) = res {
+                debug!("Could not unregister player: {}", err);
+            }
         }
-        Err(err) => (
-            StatusCode::FORBIDDEN,
-            format!("Could not start checking: {}", err),
-        ),
-    }
+        state.on_check = false;
+    });
+
+    let res = (
+        StatusCode::OK,
+        format!("Check-in started, duration: {} seconds", duration.as_secs()),
+    );
+
+    Ok(res)
 }
 
 pub async fn check(
-    Extension(mut state): Extension<State>,
+    Extension(state): Extension<SharedState>,
     Path(discord_id): Path<String>,
 ) -> (StatusCode, String) {
+    let mut state = state.lock().await;
+
     let base_len = state.player_list.len();
 
     let player_list: Vec<Player> = state
         .player_list
+        .clone()
         .into_iter()
         .filter(|p| p.discord_id != discord_id)
         .collect();
