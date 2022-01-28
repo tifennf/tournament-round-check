@@ -55,10 +55,13 @@ pub async fn start(
         for player in state.player_list.iter() {
             let res = unregister_player(&client, player.discord_id.clone()).await;
 
+            println!("{:#?}", res);
+
             if let Err(err) = res {
                 println!("Could not unregister player: {}", err);
             }
         }
+
         state.on_check = false;
     });
 
