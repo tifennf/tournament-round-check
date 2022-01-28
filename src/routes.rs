@@ -14,35 +14,50 @@ pub async fn info(Extension(state): Extension<State>) -> Json<State> {
     Json(state)
 }
 
-pub async fn start(Extension(mut state): Extension<State>) -> String {
+pub async fn start(Extension(mut state): Extension<State>) -> (StatusCode, String) {
     state.on_check = true;
 
-    let duration = Duration::from_secs(600);
     let client = Client::new();
 
-    let res = client
-        .get("http://localhost:3024/info")
-        .send()
-        .await
-        .unwrap();
-    let player_list = res.json::<Tournament>().await.unwrap().player_list;
+    let res = client.get("http://localhost:3024/info").send().await;
 
-    state.player_list = player_list;
+    let player_list = match res {
+        Ok(res) => res
+            .json::<Tournament>()
+            .await
+            .and_then(|t| Ok(t.player_list)),
+        Err(_) => Ok(Vec::new()),
+    };
 
-    tokio::spawn(async move {
-        sleep(duration).await;
+    match player_list {
+        Ok(player_list) => {
+            let duration = Duration::from_secs(600);
 
-        for player in state.player_list {
-            let res = unregister_player(&client, player.discord_id).await;
+            state.player_list = player_list;
 
-            if let Err(err) = res {
-                debug!("Could not unregister player: {}", err);
-            }
+            tokio::spawn(async move {
+                sleep(duration).await;
+
+                for player in state.player_list {
+                    let res = unregister_player(&client, player.discord_id).await;
+
+                    if let Err(err) = res {
+                        debug!("Could not unregister player: {}", err);
+                    }
+                }
+
+                state.on_check = false;
+            });
+            (
+                StatusCode::OK,
+                format!("Check-in started, duration: {} seconds", duration.as_secs()),
+            )
         }
-
-        state.on_check = false;
-    });
-    format!("Check-in started, duration: {} seconds", duration.as_secs())
+        Err(err) => (
+            StatusCode::FORBIDDEN,
+            format!("Could not start checking: {}", err),
+        ),
+    }
 }
 
 pub async fn check(
