@@ -63,15 +63,15 @@ pub struct DiscordName {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiRes {
-    status: u16,
-    data: Tournament,
+    pub status: u16,
+    pub data: Tournament,
 }
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Tournament {
-    player_list: PlayerList,
+    pub player_list: PlayerList,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PlayerList {
-    list: Vec<Player>,
+    pub list: Vec<Player>,
 }

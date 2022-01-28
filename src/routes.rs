@@ -36,33 +36,31 @@ pub async fn start(
         .await
         .map_err(|_| StatusCode::FORBIDDEN)?;
 
-    let tournament = res.json::<ApiRes>().await.map_err(|err| {
+    let res = res.json::<ApiRes>().await.map_err(|err| {
         println!("{}", err);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
 
-    println!("{:#?}", tournament);
-
-    // let player_list = tournament.player_list.list;
+    let player_list = res.data.player_list.list;
 
     let duration = Duration::from_secs(time);
 
-    // state.player_list = player_list;
+    state.player_list = player_list;
 
-    // tokio::spawn(async move {
-    //     sleep(duration).await;
+    tokio::spawn(async move {
+        sleep(duration).await;
 
-    //     let mut state = c_state.lock().await;
+        let mut state = c_state.lock().await;
 
-    //     for player in state.player_list.iter() {
-    //         let res = unregister_player(&client, player.discord_id.clone()).await;
+        for player in state.player_list.iter() {
+            let res = unregister_player(&client, player.discord_id.clone()).await;
 
-    //         if let Err(err) = res {
-    //             debug!("Could not unregister player: {}", err);
-    //         }
-    //     }
-    //     state.on_check = false;
-    // });
+            if let Err(err) = res {
+                debug!("Could not unregister player: {}", err);
+            }
+        }
+        state.on_check = false;
+    });
 
     let res = (
         StatusCode::OK,
