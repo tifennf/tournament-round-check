@@ -29,8 +29,8 @@ async fn main() {
         .layer(AddExtensionLayer::new(state));
 
     let app = Router::new()
-        .route("/check/", get(check))
-        .route("/start/", get(start))
+        .route("/check/:id", get(check))
+        .route("/start/:time", get(start))
         .route("/info/", get(info))
         .layer(middlewares_package);
 

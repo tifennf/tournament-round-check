@@ -21,7 +21,7 @@ type SharedState = Arc<Mutex<State>>;
 
 pub async fn start(
     Extension(state): Extension<SharedState>,
-    Path(seconds): Path<u64>,
+    Path(time): Path<u64>,
 ) -> Result<(StatusCode, String), StatusCode> {
     let c_state = state.clone();
 
@@ -42,7 +42,7 @@ pub async fn start(
 
     let player_list = tournament.player_list;
 
-    let duration = Duration::from_secs(seconds);
+    let duration = Duration::from_secs(time);
 
     state.player_list = player_list;
 
