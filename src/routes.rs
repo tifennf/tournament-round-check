@@ -7,6 +7,7 @@ use axum::{
 
 use reqwest::{Client, StatusCode};
 
+use serde_json::{json, Value};
 use tokio::{sync::Mutex, time::sleep};
 use tracing::log::debug;
 
@@ -23,7 +24,7 @@ type SharedState = Arc<Mutex<State>>;
 pub async fn start(
     Extension(state): Extension<SharedState>,
     Path(time): Path<u64>,
-) -> Result<(StatusCode, String), StatusCode> {
+) -> Result<Json<Value>, StatusCode> {
     let c_state = state.clone();
 
     let mut state = state.lock().await;
@@ -67,10 +68,13 @@ pub async fn start(
         state.on_check = false;
     });
 
-    let res = (
-        StatusCode::OK,
-        format!("Check-in started, duration: {} seconds", duration.as_secs()),
-    );
+    let body = json!({
+        "info": format!("Check-in started, duration: {} seconds", duration.as_secs()),
+        "duration": duration.as_secs(),
+
+    });
+
+    let res = Json(body);
 
     Ok(res)
 }
