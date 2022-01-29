@@ -1,4 +1,4 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     extract::{Extension, Path},
@@ -6,11 +6,11 @@ use axum::{
 };
 
 use reqwest::{Client, StatusCode};
-use serde_json::Value;
+
 use tokio::{sync::Mutex, time::sleep};
 use tracing::log::debug;
 
-use crate::{utils::unregister_player, ApiRes, Player, State, Tournament};
+use crate::{utils::unregister_player, ApiRes, Player, State};
 
 pub async fn info(Extension(state): Extension<SharedState>) -> Result<Json<State>, StatusCode> {
     let state = state.lock().await;
@@ -52,7 +52,9 @@ pub async fn start(
 
         let mut state = c_state.lock().await;
 
-        for player in state.player_list.iter() {
+        let player_list = &state.player_list;
+
+        for player in player_list.iter() {
             let res = unregister_player(&client, player.discord_id.clone())
                 .await
                 .unwrap();
